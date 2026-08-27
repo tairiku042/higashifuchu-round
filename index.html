@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>高機能ラウンド台帳入力フォーム</title>
+  <title>高機能ラウンド台帳入力フォーム（東府中）</title>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     body { font-family: sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -41,6 +41,7 @@
   <h2>ラウンド台帳登録</h2>
   
   <form id="roundForm">
+    <!-- 担当プランナー欄 -->
     <div class="form-group">
       <label for="planner">担当プランナー名 *</label>
       <select id="planner" required>
@@ -180,7 +181,7 @@
 </div>
 
 <script>
-  // ★ここに各ベース用のGAS URLを設定してください★
+  // ★ここに「東府中用」のGAS URLを設定してください★
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxYnxQOPP3SmF1_7oc75ZYR-ET6KlZ3EqjathreLSUJocxbC3CshixB3SHDTfFImHj90w/exec";
 
   document.getElementById('date').valueAsDate = new Date();
@@ -203,7 +204,6 @@
     }
   }
 
-  // 出発場所と到着場所を引き継いでYahoo!路線情報を開く処理
   function openYahooTransit() {
     const from = encodeURIComponent(document.getElementById('stationFrom').value.trim());
     const to = encodeURIComponent(document.getElementById('stationTo').value.trim());
@@ -219,6 +219,7 @@
   let videoStream = null;
   let animationFrameId = null;
 
+  // 東府中の第三者チェック用QRマッピング
   const memberMap = {
     'CHECK-KOHATA': '木幡',
     'CHECK-MURATA': '村田',
@@ -293,16 +294,31 @@
 
   document.getElementById('roundForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    const plannerVal = document.getElementById('planner').value;
+    const verifierVal = document.getElementById('verifier').value;
+
+    // 同一人物チェックガード
+    if (plannerVal && verifierVal && plannerVal === verifierVal) {
+      alert('担当プランナーと第三者チェック者が同じ人物です。別の選択を行ってください。');
+      return;
+    }
     
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.innerText = '送信中...';
 
+    // お客様名の末尾に「様」を自動付与（既に様がついている場合は重ねない）
+    let rawCustomerName = document.getElementById('customerName').value.trim();
+    if (rawCustomerName && !rawCustomerName.endsWith('様')) {
+      rawCustomerName += '様';
+    }
+
     const payload = {
-      planner: document.getElementById('planner').value,
+      planner: plannerVal,
       date: document.getElementById('date').value,
       customerId: document.getElementById('customerId').value,
-      customerName: document.getElementById('customerName').value,
+      customerName: rawCustomerName,
       startTime: document.getElementById('startTime').value,
       endTime: document.getElementById('endTime').value,
       workFee: document.getElementById('workFee').value,
@@ -313,7 +329,7 @@
       fare: document.getElementById('fare').value,
       onsite: document.getElementById('onsite').value,
       asset: document.getElementById('asset').value,
-      verifier: document.getElementById('verifier').value
+      verifier: verifierVal
     };
 
     fetch(WEB_APP_URL, {
