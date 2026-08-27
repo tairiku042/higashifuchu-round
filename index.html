@@ -18,10 +18,10 @@
     button:hover { background: #0056b3; }
     button:disabled { background: #ccc; }
     
-    /* 注意喚起スタイルの追加 */
-    .bike-warning { display: none; margin-top: 8px; padding: 10px; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 5px; font-weight: bold; font-size: 14px; text-align: center; }
+    .qr-section { background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 20px; }
+    
+    .bike-warning { display: none; margin-top: 8px; padding: 10px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 5px; font-weight: bold; font-size: 14px; text-align: center; }
 
-    /* カメラ・QR関連スタイル */
     .qr-btn { background: #28a745; margin-bottom: 10px; }
     .qr-btn:hover { background: #218838; }
     #video-container { display: none; text-align: center; margin-bottom: 20px; position: relative; }
@@ -61,8 +61,8 @@
         <input type="text" id="customerId" placeholder="例: 12345" required>
       </div>
       <div class="form-group">
-        <label for="customerName">お客様名 *</label>
-        <input type="text" id="customerName" placeholder="例: 山田太郎" required>
+        <label for="customerName">お客様名（苗字カナ入力） *</label>
+        <input type="text" id="customerName" placeholder="例: ヤマダ" required>
       </div>
     </div>
 
@@ -78,8 +78,8 @@
     </div>
 
     <div class="form-group">
-      <label for="workFee">想定作業料金 (円)</label>
-      <input type="number" id="workFee" placeholder="例: 5000">
+      <label for="workFee">想定作業料金 (円) ※商品代も含めて入力 *</label>
+      <input type="number" id="workFee" placeholder="例: 5000" required>
     </div>
 
     <div class="form-group">
@@ -91,13 +91,12 @@
       <label for="transport">移動手段 *</label>
       <select id="transport" required onchange="toggleTransportFields()">
         <option value="">選択してください</option>
+        <option value="車">車</option>
         <option value="電車">電車</option>
         <option value="バス">バス</option>
         <option value="自転車">自転車</option>
-        <option value="徒歩">徒歩</option>
-        <option value="車/バイク">車/バイク</option>
+        <option value="徒歩">徒歩</option>  
       </select>
-      <!-- 自転車用の注意喚起 -->
       <div id="bikeWarning" class="bike-warning">
         ⚠️ 自転車移動時は必ずヘルメットを着用してください！
       </div>
@@ -135,9 +134,29 @@
       </div>
     </div>
 
-    <!-- 第三者チェックエリア -->
-    <div class="form-group">
-      <label for="verifier">第三者チェック者 *</label>
+    <!-- 🔒 ⑪ 第三者チェック（必須）エリア -->
+    <div class="qr-section">
+      <label style="font-size: 16px;">🔒 ⑪ 第三者チェック（必須）</label>
+      
+      <div style="text-align: left; margin: 10px 0; background: #ffffff; padding: 12px; border-radius: 5px; font-size: 14px; border: 1px solid #e0e0e0;">
+        <label style="font-weight: normal; margin-bottom: 8px; display: block;">
+          <input type="checkbox" required style="width: auto; margin-right: 5px;"> 🪪 免許証はあるか？
+        </label>
+        <label style="font-weight: normal; margin-bottom: 8px; display: block;">
+          <input type="checkbox" required style="width: auto; margin-right: 5px;"> 📱 ラウンド用携帯を持っているか？
+        </label>
+        <label style="font-weight: normal; margin-bottom: 8px; display: block;">
+          <input type="checkbox" required style="width: auto; margin-right: 5px;"> 📁 個人情報管理は適切か？
+        </label>
+        <label style="font-weight: normal; margin-bottom: 8px; display: block;">
+          <input type="checkbox" required style="width: auto; margin-right: 5px;"> 💴 会計がある場合、釣銭を持っているか？
+        </label>
+      </div>
+
+      <div style="color: #dc3545; font-weight: bold; font-size: 13px; margin-bottom: 12px; line-height: 1.4;">
+        🚨 移動手段に関わらず、ラウンドからBASEへの戻りなし（直帰）は原則禁止です！
+      </div>
+
       <button type="button" class="qr-btn" onclick="startScanner()">📷 QRコードを読み取る</button>
       
       <div id="video-container">
@@ -145,7 +164,7 @@
         <button type="button" class="close-scan" onclick="stopScanner()">スキャン中止</button>
       </div>
 
-      <input type="text" id="verifier" placeholder="QR読取で自動入力されます" readonly required>
+      <input type="text" id="verifier" placeholder="QR読取で自動入力されます" readonly required style="margin-top: 5px;">
     </div>
 
     <button type="submit" id="submitBtn">送信する</button>
@@ -156,23 +175,19 @@
   // ★ここに各ベース用のGAS URLを設定してください★
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxYnxQOPP3SmF1_7oc75ZYR-ET6KlZ3EqjathreLSUJocxbC3CshixB3SHDTfFImHj90w/exec";
 
-  // 今日の日付を初期セット
   document.getElementById('date').valueAsDate = new Date();
 
-  // 移動手段による表示切り替え＆注意喚起の制御
   function toggleTransportFields() {
     const transport = document.getElementById('transport').value;
     const routeFields = document.getElementById('routeFields');
     const bikeWarning = document.getElementById('bikeWarning');
 
-    // 自転車注意喚起の制御
     if (transport === '自転車') {
       bikeWarning.style.display = 'block';
     } else {
       bikeWarning.style.display = 'none';
     }
 
-    // 経路・運賃入力の制御（徒歩・自転車の場合は非表示）
     if (transport === '徒歩' || transport === '自転車') {
       routeFields.style.display = 'none';
     } else {
@@ -180,7 +195,6 @@
     }
   }
 
-  // QRコードスキャナーの処理
   let videoStream = null;
   let animationFrameId = null;
 
@@ -235,7 +249,6 @@
           alert("第三者チェック者: 「" + memberMap[rawData] + "」さんを登録しました。");
           return;
         } else {
-          // 定義外の文字でもそのまま読み込み許可する場合
           document.getElementById('verifier').value = rawData;
           stopScanner();
           alert("読み取り完了: " + rawData);
@@ -257,7 +270,6 @@
     document.getElementById('video-container').style.display = 'none';
   }
 
-  // フォーム送信処理
   document.getElementById('roundForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
