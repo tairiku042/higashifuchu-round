@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>高機能ラウンド台帳入力フォーム（東府中）</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
+        .container { max-width: 500px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 0 auto; }
+        h2 { text-align: center; color: #007bff; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        input:focus, select:focus, textarea:focus { border-color: #007bff; outline: none; }
+        
+        /* 直帰禁止バナー */
+        .rule-banner { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-bottom: 15px; text-align: center; }
+
+        .sub-group { background: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; border-radius: 0 5px 5px 0; margin-top: 10px; display: none; }
+        .map-btn { background: #ff7e00; color: white; padding: 8px; border: none; border-radius: 5px; cursor: pointer; margin-top: 8px; width: 100%; font-weight: bold; }
+        .map-btn:hover { background: #e57100; }
+
+        .qr-section { background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; border-radius: 5px; margin-top: 20px; text-align: center; }
+        .camera-btn { background: #ffc107; color: #333; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; font-size: 15px; }
+        .camera-btn:hover { background: #e0a800; }
+        #video-container { display: none; margin-top: 10px; position: relative; }
+        #qr-video { width: 100%; max-width: 300px; border-radius: 5px; border: 2px solid #333; }
+        .status-ok { color: #333; font-weight: bold; font-size: 16px; margin-top: 10px; }
+
+        .submit-btn { width: 100%; background: #007bff; color: white; padding: 14px; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; font-weight: bold; transition: background 0.2s; margin-top: 25px; }
+        .submit-btn:hover { background: #0056b3; }
+        .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .loading { text-align: center; display: none; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 ラウンド台帳 入力（東府中）</h2>
+    <form id="ledgerForm">
+        <div class="form-group">
+            <label>👤 プランナー名</label>
+            <select id="planner" required>
+                <option value="">選択してください</option>
+                <option value="木幡">木幡</option>
+                <option value="村田">村田</option>
+                <option value="前田">前田</option>
+                <option value="小田川">小田川</option>
+                <option value="黒石">黒石</option>
+                <option value="佐藤">佐藤</option>
+                <option value="下河原">下河原</option>
+                <option value="伊藤">伊藤</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>① 日付</label>
+            <input type="date" id="date" required>
+        </div>
+
+        <div class="form-group">
+            <label>② お客様番号</label>
+            <input type="text" id="customerId" placeholder="例: 12345678" required>
+        </div>
+
+        <div class="form-group">
+            <label>③ お客様お名前（苗字のみ・カタカナ）</label>
+            <input type="text" id="customerName" placeholder="苗字をカタカナで入力" pattern="[\u30A1-\u30FC]+" title="カタカナのみで入力してください" required>
+        </div>
+
+        <div class="form-group">
+            <label>④ 出発時間</label>
+            <input type="time" id="startTime" required>
+        </div>
+        <div class="form-group">
+            <label>⑤ 戻り予定時間</label>
+            <input type="time" id="endTime" required>
+        </div>
+
+        <!-- 想定作業料金（商品代含む） -->
+        <div class="form-group">
+            <label>⑥ 想定作業料金（円・商品代含む）</label>
+            <div style="color: #d9534f; font-size: 13px; font-weight: bold; margin-bottom: 5px;">
+                ⚠️ 作業時・現地では必ず作業内容と料金を確認し、BASEへ電話したうえでお客さまに電話を代わっていただくようお願いいたします。
+            </div>
+            <input type="number" id="workFee" placeholder="例: 0" value="0" min="0" required>
+        </div>
+
+        <!-- 作業内容 -->
+        <div class="form-group">
+            <label>⑦ 作業内容</label>
+            <input type="text" id="workContent" placeholder="例: 契約手続き、設定作業など" required>
+        </div>
+
+        <!-- 直帰禁止バナー -->
+        <div class="rule-banner">
+            🚨 移動手段に関わらず、ラウンドからBASEへの戻りなし（直帰）は原則禁止です！
+        </div>
+
+        <div class="form-group">
+            <label>⑧ 移動手段</label>
+            <select id="transport" onchange="toggleTransportSection()" required>
+                <option value="">選択してください</option>
+                <option value="公共交通機関">公共交通機関</option>
+                <option value="車">車</option>
+                <option value="徒歩orニンバス2万（自転車）">徒歩orニンバス2万</option>
+                <option value="その他">その他</option>
+            </select>
+
+            <div id="transit-section" class="sub-group">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 14px;">🚉 出発駅（定期内の場合は料金が発生してくる駅から記入してください）</label>
+                    <input type="text" id="stationFrom" placeholder="例: 東府中駅">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 14px;">🚉 到着駅</label>
+                    <input type="text" id="stationTo" placeholder="例: 府中駅">
+                </div>
+                <button type="button" class="map-btn" onclick="openYahooTransit()">🔍 Yahoo!乗換案内で運賃を調べる</button>
+                <div style="margin-top: 15px;">
+                    <label style="font-size: 14px;">💰 運賃（数字のみ）</label>
+                    <input type="number" id="fare" placeholder="例: 160" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>⑨ ONSITE区分</label>
+            <select id="onsite" required>
+                <option value="">選択してください</option>
+                <option value="ONSITE">ONSITE</option>
+                <option value="それ以外">それ以外</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>⑩ Asset数</label>
+            <select id="asset" required>
+                <option value="">選択してください</option>
+                <option value="0">0</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+        </div>
+
+        <div class="qr-section">
+            <label>🔒 ⑪ 第三者チェック（必須）</label>
+            
+            <div style="text-align: left; margin: 10px 0; background: #ffffff; padding: 10px; border-radius: 5px; font-size: 14px;">
+                <label style="font-weight: normal; margin-bottom: 6px;">
+                    <input type="checkbox" required style="width: auto; margin-right: 5px;"> 🪪 免許証はあるか？
+                </label>
+                <label style="font-weight: normal; margin-bottom: 6px;">
+                    <input type="checkbox" required style="width: auto; margin-right: 5px;"> 📱 ラウンド用携帯を持っているか？
+                </label>
+                <label style="font-weight: normal; margin-bottom: 6px;">
+                    <input type="checkbox" required style="width: auto; margin-right: 5px;"> 📁 個人情報管理は適切か？
+                </label>
+                <label style="font-weight: normal;">
+                    <input type="checkbox" required style="width: auto; margin-right: 5px;"> 💴 会計がある場合、釣銭を持っているか？
+                </label>
+            </div>
+
+            <button type="button" class="camera-btn" id="start-camera-btn" onclick="startQRScan()">📷 他のプランナーのQRコードを読取</button>
+            <div id="video-container">
+                <video id="qr-video" playsinline></video>
+            </div>
+            <div class="status-ok" id="verify-status">❌ 未確認</div>
+            <input type="hidden" id="verifier" value="">
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>データを送信する</button>
+        <div class="loading" id="loadingMsg">送信中... しばらくお待ちください</div>
+    </form>
+</div>
+
+<script>
+    // ※東府中BASE用スプレッドシート(GAS)のWebアプリURLをここに貼り付けてください
+   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwKlv4H3maadVFRhBJI35xUlqjbLXmydPsN2URPGLJCsC-mWxfVMhwP17gIZiyQ_9Ar/exec";
+
+    // 東府中BASE用 メンバーQRマップ
+    const memberMap = {
+        'CHECK-KOHATA': '木幡',
+        'CHECK-MURATA': '村田',
+        'CHECK-MAEDA': '前田',
+        'CHECK-ODAGAWA': '小田川',
+        'CHECK-KUROISHI': '黒石',
+        'CHECK-SATO': '佐藤',
+        'CHECK-SHIMOGAWARA': '下河原',
+        'CHECK-ITO': '伊藤'
+    };
+
+    function toggleTransportSection() {
+        const transport = document.getElementById('transport').value;
+        const section = document.getElementById('transit-section');
+        const from = document.getElementById('stationFrom');
+        const to = document.getElementById('stationTo');
+        const fare = document.getElementById('fare');
+
+        if (transport === '公共交通機関') {
+            section.style.display = 'block';
+            from.required = true;
+            to.required = true;
+            fare.required = true;
+        } else {
+            section.style.display = 'none';
+            from.required = false;
+            to.required = false;
+            fare.required = false;
+            from.value = '';
+            to.value = '';
+            fare.value = '0';
+        }
+    }
+
+    function openYahooTransit() {
+        const from = document.getElementById('stationFrom').value;
+        const to = document.getElementById('stationTo').value;
+        if (!from || !to) {
+            alert('出発駅と到着駅を入力してください。');
+            return;
+        }
+        const url = `https://transit.yahoo.co.jp/search/result?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        window.open(url, '_blank');
+    }
+
+    let videoStream = null;
+    let animationId = null;
+
+    function startQRScan() {
+        const planner = document.getElementById('planner').value;
+        if (!planner) {
+            alert('最初に「プランナー名」を選択してください。');
+            return;
+        }
+
+        const video = document.getElementById('qr-video');
+        const container = document.getElementById('video-container');
+        container.style.display = 'block';
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(function(stream) {
+            videoStream = stream;
+            video.srcObject = stream;
+            video.setAttribute("playsinline", true);
+            video.play();
+            animationId = requestAnimationFrame(tick);
+        })
+        .catch(function(err) {
+            console.error(err);
+            alert("カメラの起動に失敗しました。カメラのアクセス権限を許可してください。");
+        });
+    }
+
+    function tick() {
+        const video = document.getElementById('qr-video');
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+
+            if (code) {
+                const qrText = code.data;
+                if (memberMap[qrText]) {
+                    const verifierName = memberMap[qrText];
+                    const plannerName = document.getElementById('planner').value;
+
+                    if (plannerName === verifierName) {
+                        alert("⚠️ プランナー自身を第三者確認者に指定することはできません。\n他のメンバーのQRコードを読み取ってください。");
+                        stopCamera();
+                        return;
+                    }
+                    
+                    document.getElementById('verifier').value = verifierName;
+                    const statusDiv = document.getElementById('verify-status');
+                    statusDiv.innerText = `⭕ 確認者: ${verifierName}さん (チェック完了)`;
+                    statusDiv.style.color = '#28a745';
+                    
+                    document.getElementById('submitBtn').disabled = false;
+                    
+                    stopCamera();
+                    return;
+                }
+            }
+        }
+        if (videoStream) {
+            animationId = requestAnimationFrame(tick);
+        }
+    }
+
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        document.getElementById('video-container').style.display = 'none';
+    }
+
+    document.getElementById('ledgerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingMsg = document.getElementById('loadingMsg');
+        
+        submitBtn.disabled = true;
+        loadingMsg.style.display = 'block';
+
+        let finalPlanner = document.getElementById('planner').value;
+        let rawName = document.getElementById('customerName').value.trim();
+        let formattedName = rawName.endsWith('様') ? rawName : rawName + '様';
+
+        const data = {
+            planner: finalPlanner,
+            date: document.getElementById('date').value,
+            customerId: document.getElementById('customerId').value,
+            customerName: formattedName,
+            startTime: document.getElementById('startTime').value,
+            endTime: document.getElementById('endTime').value,
+            workFee: document.getElementById('workFee').value,
+            workContent: document.getElementById('workContent').value,
+            transport: document.getElementById('transport').value,
+            stationFrom: document.getElementById('stationFrom').value,
+            stationTo: document.getElementById('stationTo').value,
+            fare: document.getElementById('fare').value,
+            onsite: document.getElementById('onsite').value,
+            asset: document.getElementById('asset').value,
+            verifier: document.getElementById('verifier').value
+        };
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            alert('第三者確認が取れ、BASEの台帳（スプレッドシート）に登録されました！');
+            document.getElementById('ledgerForm').reset();
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('verify-status').innerText = '❌ 未確認';
+            document.getElementById('verify-status').style.color = '#333';
+            toggleTransportSection();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました。');
+        })
+        .finally(() => {
+            loadingMsg.style.display = 'none';
+        });
+    });
+</script>
+
+</body>
+</html>
