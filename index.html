@@ -22,6 +22,12 @@
     
     .bike-warning { display: none; margin-top: 8px; padding: 10px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 5px; font-weight: bold; font-size: 14px; text-align: center; }
 
+    /* Yahoo路線検索ボタン用のスタイル */
+    .yahoo-btn { display: inline-block; width: 100%; padding: 8px; background-color: #ff0033; color: white; text-align: center; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; margin-bottom: 12px; font-size: 14px; }
+    .yahoo-btn:hover { background-color: #cc0029; }
+
+    #routeFields { display: none; }
+
     .qr-btn { background: #28a745; margin-bottom: 10px; }
     .qr-btn:hover { background: #218838; }
     #video-container { display: none; text-align: center; margin-bottom: 20px; position: relative; }
@@ -91,18 +97,20 @@
       <label for="transport">移動手段 *</label>
       <select id="transport" required onchange="toggleTransportFields()">
         <option value="">選択してください</option>
-        <option value="車">車</option>
-        <option value="電車">電車</option>
-        <option value="バス">バス</option>
+        <option value="公共交通機関">公共交通機関</option>
         <option value="自転車">自転車</option>
-        <option value="徒歩">徒歩</option>  
+        <option value="徒歩">徒歩</option>
+        <option value="車">車</option>
       </select>
       <div id="bikeWarning" class="bike-warning">
         ⚠️ 自転車移動時は必ずヘルメットを着用してください！
       </div>
     </div>
 
+    <!-- 公共交通機関を選択した場合のみ表示 -->
     <div id="routeFields">
+      <button type="button" class="yahoo-btn" onclick="openYahooTransit()">🔍 Yahoo!路線情報で検索する（自動入力）</button>
+      
       <div class="row">
         <div class="form-group">
           <label for="stationFrom">出発場所</label>
@@ -188,11 +196,24 @@
       bikeWarning.style.display = 'none';
     }
 
-    if (transport === '徒歩' || transport === '自転車') {
-      routeFields.style.display = 'none';
-    } else {
+    if (transport === '公共交通機関') {
       routeFields.style.display = 'block';
+    } else {
+      routeFields.style.display = 'none';
     }
+  }
+
+  // 出発場所と到着場所を引き継いでYahoo!路線情報を開く処理
+  function openYahooTransit() {
+    const from = encodeURIComponent(document.getElementById('stationFrom').value.trim());
+    const to = encodeURIComponent(document.getElementById('stationTo').value.trim());
+    
+    let url = "https://transit.yahoo.co.jp/";
+    if (from || to) {
+      url = `https://transit.yahoo.co.jp/search/result?from=${from}&to=${to}`;
+    }
+    
+    window.open(url, '_blank');
   }
 
   let videoStream = null;
