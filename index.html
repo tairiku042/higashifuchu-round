@@ -38,22 +38,22 @@
 <body>
 
 <div class="container">
-  <h2>ラウンド台帳登録</h2>
+  <h2>ラウンド台帳（東府中）</h2>
   
   <form id="roundForm">
-    <!-- 担当プランナー欄 -->
+    <!-- 担当プランナー欄（東府中メンバー・フルネーム） -->
     <div class="form-group">
       <label for="planner">担当プランナー名 *</label>
       <select id="planner" required>
         <option value="">選択してください</option>
-        <option value="木幡">木幡</option>
-        <option value="村田">村田</option>
-        <option value="前田">前田</option>
-        <option value="小田川">小田川</option>
-        <option value="黒石">黒石</option>
-        <option value="佐藤">佐藤</option>
-        <option value="下河原">下河原</option>
-        <option value="伊藤">伊藤</option>
+        <option value="木幡莉奈">木幡莉奈</option>
+        <option value="村田壱騎">村田壱騎</option>
+        <option value="前田龍也">前田龍也</option>
+        <option value="小田川真也">小田川真也</option>
+        <option value="黒石健">黒石健</option>
+        <option value="佐藤祐哉">佐藤祐哉</option>
+        <option value="下河原建太">下河原建太</option>
+        <option value="伊藤初">伊藤初</option>
       </select>
     </div>
 
@@ -219,7 +219,7 @@
   let videoStream = null;
   let animationFrameId = null;
 
-  // 東府中の第三者チェック用QRマッピング
+  // 東府中の第三者チェック用QRマッピング（前のままの苗字表記）
   const memberMap = {
     'CHECK-KOHATA': '木幡',
     'CHECK-MURATA': '村田',
@@ -298,8 +298,8 @@
     const plannerVal = document.getElementById('planner').value;
     const verifierVal = document.getElementById('verifier').value;
 
-    // 同一人物チェックガード
-    if (plannerVal && verifierVal && plannerVal === verifierVal) {
+    // 同一人物チェックガード（プランナー名に苗字が含まれているかで判定）
+    if (plannerVal && verifierVal && plannerVal.includes(verifierVal)) {
       alert('担当プランナーと第三者チェック者が同じ人物です。別の選択を行ってください。');
       return;
     }
