@@ -33,6 +33,9 @@
     #video-container { display: none; text-align: center; margin-bottom: 20px; position: relative; }
     #qr-video { width: 100%; max-width: 400px; border-radius: 8px; border: 2px solid #28a745; }
     .close-scan { background: #dc3545; padding: 6px 12px; font-size: 14px; margin-top: 5px; }
+
+    /* 作業完了時確認の注意書きスタイル */
+    .work-note { margin-top: 8px; padding: 10px; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 5px; font-weight: bold; font-size: 13px; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -65,7 +68,7 @@
     <div class="row">
       <div class="form-group">
         <label for="customerId">会員番号 *</label>
-        <input type="text" id="customerId" placeholder="例: 12345" required>
+        <input type="text" id="customerId" placeholder="例: 12345678" required>
       </div>
       <div class="form-group">
         <label for="customerName">お客様名（苗字カナ入力） *</label>
@@ -92,6 +95,9 @@
     <div class="form-group">
       <label for="workContent">作業内容</label>
       <textarea id="workContent" rows="3" placeholder="作業の詳細を記載"></textarea>
+      <div class="work-note">
+        ⚠️ 作業終了時、作業料金が正しいかどうかの確認および作業内容の確認のためBASEへ電話し、お客様と電話を代わってください。
+      </div>
     </div>
 
     <div class="form-group">
